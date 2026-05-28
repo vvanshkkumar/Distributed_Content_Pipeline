@@ -10,7 +10,7 @@ from src.database import SessionLocal
 from src.models import BlogRun
 from src.cache import invalidate_recents_cache
 
-# Import the State and all 6 Nodes
+
 from src.blog.graph.state import BlogState
 from src.blog.graph.nodes.router_node import router_node
 from src.blog.graph.nodes.research_node import research_node
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # ==========================================
 workflow = StateGraph(BlogState)
 
-# Add all 6 nodes
+
 workflow.add_node("router_node", router_node)
 workflow.add_node("research_node", research_node)
 workflow.add_node("orchestrator_node", orchestrator_node)
@@ -34,7 +34,7 @@ workflow.add_node("merge_content", merge_content)
 workflow.add_node("decide_images", decide_images)
 workflow.add_node("generate_and_place_images", generate_and_place_images)
 
-# Define the edges (the flow)
+
 workflow.add_edge("router_node", "research_node")
 workflow.add_edge("research_node", "orchestrator_node")
 workflow.add_edge("orchestrator_node", "merge_content")
@@ -42,7 +42,7 @@ workflow.add_edge("merge_content", "decide_images")
 workflow.add_edge("decide_images", "generate_and_place_images")
 workflow.add_edge("generate_and_place_images", END)
 
-# Set starting point and compile
+
 workflow.set_entry_point("router_node")
 APP = workflow.compile()
 
@@ -60,7 +60,7 @@ def run_blog_generation(topic: str, run_id: str = None) -> dict:
         
     db = SessionLocal()
     try:
-        # Step 2: Create (or fetch) BlogRun row with status RUNNING
+        
         existing_run = db.query(BlogRun).filter(BlogRun.run_id == run_id).first()
         if not existing_run:
             db_run = BlogRun(run_id=run_id, topic=topic, status="RUNNING")
@@ -69,31 +69,31 @@ def run_blog_generation(topic: str, run_id: str = None) -> dict:
         else:
             db_run = existing_run
 
-        # Step 3: Build the initial BlogState dict
+        
         initial_state = {
             "run_id": run_id,
             "topic": topic
         }
 
-        # Step 4: Call APP.invoke(state) - runs all 6 nodes in sequence
+        
         logger.info(f"Starting LangGraph pipeline for run_id: {run_id}")
         final_state = APP.invoke(initial_state)
 
-        # Step 5: Save markdown to S3 (Production) or local disk (Development)
+        
         content = final_state.get("merged_content", "")
         word_count = len(content.split())
         blog_title = final_state.get("plan", {}).get("title", topic)
         
         s3_bucket = os.getenv("S3_BUCKET_NAME")
         if s3_bucket:
-            # Production: Boto3 uses EC2 Instance Profile credentials automatically
+            
             s3 = boto3.client('s3', region_name=os.getenv("AWS_REGION", "us-east-1"))
             s3_key = f"blog_runs/{run_id}/title.md"
             s3.put_object(Bucket=s3_bucket, Key=s3_key, Body=content.encode('utf-8'))
             md_file_path = f"s3://{s3_bucket}/{s3_key}"
             logger.info(f"Saved to S3: {md_file_path}")
         else:
-            # Local: Save to disk volume
+           
             save_dir = Path("data/app/data/blogs")
             save_dir.mkdir(parents=True, exist_ok=True)
             local_file = save_dir / f"{run_id}.md"
@@ -101,7 +101,7 @@ def run_blog_generation(topic: str, run_id: str = None) -> dict:
             md_file_path = str(local_file)
             logger.info(f"Saved locally: {md_file_path}")
 
-        # Step 6: Update BlogRun to status SUCCESS
+        
         db_run.status = "SUCCESS"
         db_run.blog_title = blog_title
         db_run.md_file_path = md_file_path
@@ -110,10 +110,10 @@ def run_blog_generation(topic: str, run_id: str = None) -> dict:
         db_run.completed_at = datetime.utcnow()
         db.commit()
 
-        # Step 7: Invalidate Redis recents cache
+        
         invalidate_recents_cache()
 
-        # Step 8: Return dict
+        
         return {
             "run_id": run_id,
             "status": "SUCCESS",
