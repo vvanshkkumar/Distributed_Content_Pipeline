@@ -102,16 +102,18 @@ services:
     deploy:
       replicas: 3
 
+  streamlit:
+    build: ./streamlit_app
+    ports:
+      - '8501:8501'
+    environment:
+      - API_URL=http://backend:8000
+    depends_on:
+      - backend
+    restart: on-failure
+
 volumes:
   pgdata:
 
 
-streamlit:
-  build: ./streamlit_app
-  ports:
-    - '8501:8501'
-  environment:
-    - API_URL=http://backend:8000
-  depends_on:
-    - backend
-  restart: on-failure
+
