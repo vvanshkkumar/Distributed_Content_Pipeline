@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
     
     logger.info("API ready. Visit /docs for interactive documentation.")
     
-    
+    yield {}
     
    
     logger.info("Application shutting down...")

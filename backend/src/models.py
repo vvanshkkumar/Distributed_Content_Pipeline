@@ -81,6 +81,7 @@ class SectionAttempt(Base):
     task_id = Column(String, nullable=False)
     status = Column(String, default='PENDING')
     attempts = Column(Integer, default=1)
+    last_attempt_at = Column(DateTime, nullable=True)
     error_message = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
