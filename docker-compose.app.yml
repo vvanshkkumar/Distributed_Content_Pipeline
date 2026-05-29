@@ -1,0 +1,31 @@
+# docker-compose.app.yml – for BOTH app EC2 instances
+# PostgreSQL and Redis removed (replaced by RDS and ElastiCache)
+version: '3.9'
+services:
+  backend:
+    build: ./backend
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000
+    ports: ['8000:8000']
+    volumes: ['./backend/data:/app/data']
+    env_file: .env
+    restart: unless-stopped
+
+  celery-worker:
+    build: ./backend
+    command: celery -A src.celery_app worker --loglevel=info --concurrency=4
+    volumes: ['./backend/data:/app/data']
+    env_file: .env
+    restart: unless-stopped
+
+  celery-beat:
+    build: ./backend
+    command: celery -A src.celery_app beat --loglevel=info
+    env_file: .env
+    restart: unless-stopped # redbeat handles duplicate prevention
+
+  blog-worker:
+    build: ./backend
+    command: python -m src.workers.blog_task_consumer
+    volumes: ['./backend/data:/app/data']
+    env_file: .env
+    restart: unless-stopped
