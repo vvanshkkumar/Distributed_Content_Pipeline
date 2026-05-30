@@ -10,7 +10,7 @@ st.set_page_config(
 is_logged_in = 'jwt_token' in st.session_state and st.session_state['jwt_token']
 
 if not is_logged_in:
-    st.title('Distributed Content Pipeline')
+    st.title("V's Distributed Content Pipeline")
     st.caption('Please log in or create an account to continue.')
 
     health = health_check()
