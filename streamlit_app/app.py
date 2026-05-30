@@ -2,8 +2,7 @@ import streamlit as st
 from utils.api_client import login, register, health_check
 
 st.set_page_config(
-    page_title='Content Pipeline',
-    page_icon='🚀',
+    page_title="vvanshkkumar's Content Pipeline",
     layout='wide',
     initial_sidebar_state='expanded'
 )
